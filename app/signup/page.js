@@ -1,7 +1,12 @@
+
+
 "use client";
+
 
 import Link from "next/link";
 import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "@/lib/firebase";
 import {
   User,
   Mail,
@@ -36,9 +41,27 @@ export default function SignupPage() {
     window.location.href = "/dashboard";
   };
 
-  const handleGoogleSignup = () => {
-    alert("Google Sign Up integration will be added with Firebase/Auth.js");
-  };
+  const handleGoogleSignup = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        fullName: user.displayName,
+        email: user.email,
+      })
+    );
+
+    alert("Google Sign Up Successful!");
+    window.location.href = "/dashboard";
+  } catch (error) {
+  console.log("FULL FIREBASE ERROR:", error);
+  alert(error.message);
+}
+  
+};
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 flex items-center justify-center px-6 relative overflow-hidden">

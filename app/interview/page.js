@@ -1,29 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Video,
   Mic,
   MicOff,
+  Video,
   VideoOff,
   Bot,
   Send,
   Sparkles,
+  Volume2,
 } from "lucide-react";
 
+const questions = [
+  "Tell me about yourself.",
+  "Explain your final year project in brief.",
+  "What are your strengths and weaknesses?",
+  "Why should we hire you for this role?",
+  "Describe a challenging situation you faced and how you solved it.",
+];
+
 export default function InterviewPage() {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(questions[0]);
   const [answer, setAnswer] = useState("");
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const videoRef = useRef(null);
+
+  /* CAMERA PREVIEW */
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        if (cameraOn) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    startCamera();
+  }, [cameraOn]);
+
+  /* AI BOT SPEAKING QUESTION */
+  useEffect(() => {
+    speakQuestion(currentQuestion);
+  }, [currentQuestion]);
+
+  const speakQuestion = (text) => {
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.rate = 1;
+    speech.pitch = 1;
+    speech.volume = 1;
+
+    speech.onstart = () => setIsSpeaking(true);
+    speech.onend = () => setIsSpeaking(false);
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(speech);
+  };
 
   const handleSubmit = () => {
     if (!answer.trim()) {
-      alert("Please enter your answer first");
+      alert("Please answer the question first");
       return;
     }
 
-    alert("Answer submitted successfully!");
-    setAnswer("");
+    // Save dynamic stats
+    const prevInterviews =
+      Number(localStorage.getItem("interviews")) || 0;
+    const prevReports =
+      Number(localStorage.getItem("reports")) || 0;
+
+    localStorage.setItem(
+      "interviews",
+      String(prevInterviews + 1)
+    );
+
+    localStorage.setItem(
+      "reports",
+      String(prevReports + 1)
+    );
+
+    localStorage.setItem("avgScore", "85");
+
+    // Next Question
+    if (currentQuestionIndex < questions.length - 1) {
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      setCurrentQuestion(questions[nextIndex]);
+      setAnswer("");
+    } else {
+      alert("Interview Completed Successfully!");
+      window.location.href = "/feedback";
+    }
   };
 
   return (
@@ -45,22 +125,26 @@ export default function InterviewPage() {
           </h1>
 
           <p className="text-gray-600 text-lg">
-            Practice with your AI interviewer in a real interview-like
-            environment.
+            AI bot asks questions automatically with real camera preview.
           </p>
         </div>
 
-        {/* Main Interview Layout */}
+        {/* Main Layout */}
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* AI Interviewer Section */}
+          {/* AI BOT */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
             <h2 className="text-2xl font-bold mb-6">
               AI Interviewer
             </h2>
 
-            {/* Bot Screen */}
-            <div className="bg-gray-900 rounded-3xl h-[420px] flex flex-col items-center justify-center text-white relative overflow-hidden">
-              <div className="bg-white/10 p-8 rounded-full mb-4">
+            <div className="bg-gray-900 rounded-3xl h-[430px] flex flex-col items-center justify-center text-white relative overflow-hidden">
+              <div
+                className={`p-8 rounded-full mb-4 ${
+                  isSpeaking
+                    ? "bg-green-500/20 animate-pulse"
+                    : "bg-white/10"
+                }`}
+              >
                 <Bot size={80} />
               </div>
 
@@ -68,16 +152,20 @@ export default function InterviewPage() {
                 HR Interview Bot
               </h3>
 
-              <p className="text-gray-300 text-center max-w-md px-6">
-                Hello! I’ll be conducting your interview today.
-                Please introduce yourself and tell me about your
-                background.
+              <p className="text-center max-w-md px-6 text-gray-200">
+                {currentQuestion}
               </p>
 
-              {/* Live Label */}
               <div className="absolute top-4 right-4 bg-red-500 px-4 py-1 rounded-full text-sm font-medium">
                 LIVE
               </div>
+
+              {isSpeaking && (
+                <div className="mt-4 flex items-center gap-2 text-green-300">
+                  <Volume2 size={18} />
+                  AI is speaking...
+                </div>
+              )}
             </div>
 
             {/* Controls */}
@@ -110,30 +198,36 @@ export default function InterviewPage() {
             </div>
           </div>
 
-          {/* Candidate Section */}
+          {/* USER RESPONSE */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
             <h2 className="text-2xl font-bold mb-6">
               Your Response
             </h2>
 
-            {/* User Camera Preview */}
-            <div className="bg-gray-100 rounded-3xl h-[220px] flex items-center justify-center mb-6 border">
-              <div className="text-center">
-                <Video size={50} className="mx-auto mb-3" />
-                <p className="text-gray-500">
-                  Your Camera Preview
-                </p>
-              </div>
+            {/* LIVE CAMERA */}
+            <div className="rounded-3xl h-[240px] overflow-hidden border mb-6 bg-black">
+              {cameraOn ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-white">
+                  Camera Off
+                </div>
+              )}
             </div>
 
-            {/* Question */}
+            {/* Current Question */}
             <div className="bg-gray-50 border rounded-2xl p-5 mb-5">
-              <p className="font-medium text-lg">
-                Question:
+              <p className="font-medium text-lg mb-2">
+                Current Question:
               </p>
-              <p className="text-gray-700 mt-2">
-                Tell me about yourself and explain your technical
-                background.
+              <p className="text-gray-700">
+                {currentQuestion}
               </p>
             </div>
 

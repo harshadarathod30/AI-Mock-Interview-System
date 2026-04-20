@@ -1,38 +1,104 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Mic,
   FileText,
   BarChart3,
   Sparkles,
   ArrowRight,
+  User,
+  LogOut,
 } from "lucide-react";
 
 export default function Dashboard() {
+  const [userName, setUserName] = useState("User");
+  const [interviews, setInterviews] = useState(0);
+  const [score, setScore] = useState(0);
+  const [reports, setReports] = useState(0);
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+
+        setUserName(
+          parsedUser.fullName ||
+            parsedUser.email?.split("@")[0] ||
+            "User"
+        );
+      } catch {
+        setUserName(storedUser);
+      }
+    }
+
+    // Dynamic live stats (initially empty)
+    const interviewCount =
+      Number(localStorage.getItem("interviews")) || 0;
+
+    const avgScore =
+      Number(localStorage.getItem("avgScore")) || 0;
+
+    const reportCount =
+      Number(localStorage.getItem("reports")) || 0;
+
+    setInterviews(interviewCount);
+    setScore(avgScore);
+    setReports(reportCount);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 px-6 py-10 relative overflow-hidden">
       {/* Background Blur Effects */}
       <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-200/30 rounded-full blur-3xl"></div>
 
-      <div className="relative z-10 max-w-6xl mx-auto">
+      <div className="relative z-10 max-w-7xl mx-auto">
         {/* Top Header */}
-        <div className="mb-10">
-          <p className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Sparkles size={16} />
-            AI Mock Interview Dashboard
-          </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-10">
+          <div>
+            <p className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Sparkles size={16} />
+              AI Mock Interview Dashboard
+            </p>
 
-          <h1 className="text-5xl font-bold mb-3">
-            Welcome Back 👋
-          </h1>
+            <h1 className="text-5xl font-bold mb-3">
+              Welcome Back, {userName} 👋
+            </h1>
 
-          <p className="text-gray-600 text-lg max-w-2xl">
-            Practice interviews, track your performance, and improve
-            your confidence with AI-powered feedback and analytics.
-          </p>
+            <p className="text-gray-600 text-lg max-w-2xl">
+              Start your interview journey, improve your confidence,
+              and track your progress with real-time AI feedback.
+            </p>
+          </div>
+
+          {/* Profile + Logout */}
+          <div className="flex gap-4 mt-6 md:mt-0">
+            <div className="bg-white border border-gray-200 shadow-sm px-5 py-3 rounded-2xl flex items-center gap-3">
+              <User size={20} />
+              <span className="font-medium">{userName}</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="bg-black text-white px-5 py-3 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Live Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-10">
           <div className="bg-white p-6 rounded-3xl shadow-md border border-gray-100 hover:shadow-xl transition duration-300">
             <div className="flex items-center gap-4">
@@ -41,7 +107,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">
-                  12 Interviews
+                  {interviews} Interviews
                 </h3>
                 <p className="text-sm text-gray-500">
                   Completed sessions
@@ -57,7 +123,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">
-                  85% Score
+                  {score}% Score
                 </h3>
                 <p className="text-sm text-gray-500">
                   Average performance
@@ -73,7 +139,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">
-                  5 Reports
+                  {reports} Reports
                 </h3>
                 <p className="text-sm text-gray-500">
                   Feedback generated
@@ -110,7 +176,7 @@ export default function Dashboard() {
 
           {/* Final Report */}
           <Link
-            href="/report"
+            href="/feedback"
             className="group bg-white p-8 rounded-3xl border border-gray-100 shadow-md hover:shadow-2xl hover:-translate-y-1 transition duration-300"
           >
             <div className="flex items-center justify-between mb-6">
@@ -126,8 +192,8 @@ export default function Dashboard() {
             </h2>
 
             <p className="text-gray-600 leading-relaxed">
-              Check your interview history, strengths, weak areas,
-              and personalized improvement suggestions.
+              Check interview history, strengths, weak areas, and
+              personalized AI improvement suggestions.
             </p>
           </Link>
         </div>
