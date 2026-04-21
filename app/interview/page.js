@@ -1,256 +1,318 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Mic,
   MicOff,
   Video,
   VideoOff,
+  SkipForward,
+  Play,
+  Pause,
+  RotateCcw,
   Bot,
-  Send,
-  Sparkles,
-  Volume2,
 } from "lucide-react";
 
-const questions = [
-  "Tell me about yourself.",
-  "Explain your final year project in brief.",
-  "What are your strengths and weaknesses?",
-  "Why should we hire you for this role?",
-  "Describe a challenging situation you faced and how you solved it.",
-];
-
-export default function InterviewPage() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(questions[0]);
-  const [answer, setAnswer] = useState("");
-  const [micOn, setMicOn] = useState(true);
-  const [cameraOn, setCameraOn] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
+export default function AIInterviewRoom() {
   const videoRef = useRef(null);
 
-  /* CAMERA PREVIEW */
+  const [micOn, setMicOn] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [timer, setTimer] = useState(90);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const [role, setRole] = useState("");
+  const [experience, setExperience] = useState("");
+  const [language, setLanguage] = useState("");
+
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  /*
+    Load data from Dashboard page
+    Saved using localStorage from dashboard
+  */
   useEffect(() => {
-    const startCamera = async () => {
-      try {
-        if (cameraOn) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
+    const savedData = JSON.parse(
+      localStorage.getItem("interviewData")
+    );
 
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    if (savedData) {
+      setRole(savedData.role);
+      setExperience(savedData.experience);
+      setLanguage(savedData.language);
 
-    startCamera();
-  }, [cameraOn]);
+      generateQuestions(savedData.role, savedData.experience);
+    }
+  }, []);
 
-  /* AI BOT SPEAKING QUESTION */
-  useEffect(() => {
-    speakQuestion(currentQuestion);
-  }, [currentQuestion]);
+  /*
+    Dynamic Questions based on selected role
+    (Later replace this with Gemini API)
+  */
+  const generateQuestions = (selectedRole, selectedExperience) => {
+    let generated = [];
 
-  const speakQuestion = (text) => {
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.rate = 1;
-    speech.pitch = 1;
-    speech.volume = 1;
-
-    speech.onstart = () => setIsSpeaking(true);
-    speech.onend = () => setIsSpeaking(false);
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(speech);
-  };
-
-  const handleSubmit = () => {
-    if (!answer.trim()) {
-      alert("Please answer the question first");
-      return;
+    if (selectedRole === "Frontend Developer") {
+      generated = [
+        "Tell me about yourself and your frontend experience.",
+        "Explain React lifecycle in real-world projects.",
+        "How do you optimize performance in large React applications?",
+        "Difference between useEffect and useMemo?",
+        "How would you handle authentication in Next.js?",
+      ];
+    } else if (selectedRole === "Backend Developer") {
+      generated = [
+        "Explain REST API design best practices.",
+        "How do you handle database optimization?",
+        "What is JWT authentication?",
+        "How do you scale backend systems?",
+        "Difference between SQL and NoSQL?",
+      ];
+    } else {
+      generated = [
+        "Tell me about yourself.",
+        "Explain your recent project.",
+        "What challenges did you face?",
+        "How do you solve production issues?",
+        "Why should we hire you?",
+      ];
     }
 
-    // Save dynamic stats
-    const prevInterviews =
-      Number(localStorage.getItem("interviews")) || 0;
-    const prevReports =
-      Number(localStorage.getItem("reports")) || 0;
+    setQuestions(generated);
+  };
 
-    localStorage.setItem(
-      "interviews",
-      String(prevInterviews + 1)
-    );
+  /*
+    Camera + Mic Permission
+  */
+  const startInterviewSetup = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
-    localStorage.setItem(
-      "reports",
-      String(prevReports + 1)
-    );
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
 
-    localStorage.setItem("avgScore", "85");
+      setCameraOn(true);
+      setMicOn(true);
+    } catch (error) {
+      alert("Please allow Camera + Microphone access");
+      console.log(error);
+    }
+  };
 
-    // Next Question
-    if (currentQuestionIndex < questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(nextIndex);
-      setCurrentQuestion(questions[nextIndex]);
-      setAnswer("");
+  useEffect(() => {
+    startInterviewSetup();
+  }, []);
+
+  /*
+    Live Timer
+  */
+  useEffect(() => {
+    let interval;
+
+    if (isRunning && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+
+    if (timer === 0) {
+      handleSkip();
+    }
+
+    return () => clearInterval(interval);
+  }, [isRunning, timer]);
+
+  /*
+    Controls
+  */
+  const handleStart = () => {
+    setIsRunning(true);
+  };
+
+  const handlePause = () => {
+    setIsRunning(false);
+  };
+
+  const handleRepeat = () => {
+    setTimer(90);
+    setIsRunning(false);
+  };
+
+  const handleSkip = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+      setTimer(90);
+      setIsRunning(false);
     } else {
-      alert("Interview Completed Successfully!");
-      window.location.href = "/feedback";
+      alert("Interview Completed 🚀");
     }
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 px-6 py-10 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-200/30 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-slate-950 text-white px-4 py-6">
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-6">
+        {/* LEFT PANEL */}
+        <div className="bg-white/5 rounded-3xl p-6">
+          <div className="w-28 h-28 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 flex items-center justify-center mx-auto">
+            <Bot size={50} />
+          </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <p className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Sparkles size={16} />
-            Live AI Interview Session
-          </p>
-
-          <h1 className="text-5xl font-bold mb-3">
-            Professional Mock Interview
+          <h1 className="text-3xl font-bold text-center mt-6">
+            AI HR Interviewer
           </h1>
 
-          <p className="text-gray-600 text-lg">
-            AI bot asks questions automatically with real camera preview.
+          <p className="text-center text-gray-400 mt-2">
+            {role || "Loading Role..."}
           </p>
+
+          <p className="text-center text-sm text-gray-500">
+            {experience} • {language}
+          </p>
+
+          <div className="bg-white/5 rounded-2xl p-5 mt-6">
+            <p className="text-sm text-violet-300 mb-2">
+              Current Question
+            </p>
+
+            <p className="text-lg leading-relaxed">
+              {questions.length > 0
+                ? questions[currentQuestion]
+                : "Generating AI Questions..."}
+            </p>
+          </div>
+
+          <button
+            onClick={handleRepeat}
+            className="w-full mt-6 bg-violet-600 py-3 rounded-2xl hover:bg-violet-700"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <RotateCcw size={18} />
+              Repeat Question
+            </div>
+          </button>
         </div>
 
-        {/* Main Layout */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* AI BOT */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-            <h2 className="text-2xl font-bold mb-6">
-              AI Interviewer
+        {/* CENTER PANEL */}
+        <div className="bg-white/5 rounded-3xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">
+              Your Live Preview
             </h2>
 
-            <div className="bg-gray-900 rounded-3xl h-[430px] flex flex-col items-center justify-center text-white relative overflow-hidden">
-              <div
-                className={`p-8 rounded-full mb-4 ${
-                  isSpeaking
-                    ? "bg-green-500/20 animate-pulse"
-                    : "bg-white/10"
-                }`}
-              >
-                <Bot size={80} />
-              </div>
-
-              <h3 className="text-2xl font-semibold mb-2">
-                HR Interview Bot
-              </h3>
-
-              <p className="text-center max-w-md px-6 text-gray-200">
-                {currentQuestion}
+            <div className="text-right">
+              <p className="text-sm text-gray-400">
+                Answer Time Left
               </p>
 
-              <div className="absolute top-4 right-4 bg-red-500 px-4 py-1 rounded-full text-sm font-medium">
-                LIVE
-              </div>
-
-              {isSpeaking && (
-                <div className="mt-4 flex items-center gap-2 text-green-300">
-                  <Volume2 size={18} />
-                  AI is speaking...
-                </div>
-              )}
-            </div>
-
-            {/* Controls */}
-            <div className="flex justify-center gap-4 mt-6">
-              <button
-                onClick={() => setMicOn(!micOn)}
-                className={`p-4 rounded-2xl transition ${
-                  micOn
-                    ? "bg-black text-white"
-                    : "bg-red-100 text-red-600"
-                }`}
-              >
-                {micOn ? <Mic size={22} /> : <MicOff size={22} />}
-              </button>
-
-              <button
-                onClick={() => setCameraOn(!cameraOn)}
-                className={`p-4 rounded-2xl transition ${
-                  cameraOn
-                    ? "bg-black text-white"
-                    : "bg-red-100 text-red-600"
-                }`}
-              >
-                {cameraOn ? (
-                  <Video size={22} />
-                ) : (
-                  <VideoOff size={22} />
-                )}
-              </button>
+              <h1 className="text-3xl font-bold text-pink-400">
+                {timer}s
+              </h1>
             </div>
           </div>
 
-          {/* USER RESPONSE */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-            <h2 className="text-2xl font-bold mb-6">
-              Your Response
-            </h2>
-
-            {/* LIVE CAMERA */}
-            <div className="rounded-3xl h-[240px] overflow-hidden border mb-6 bg-black">
-              {cameraOn ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-white">
-                  Camera Off
-                </div>
-              )}
-            </div>
-
-            {/* Current Question */}
-            <div className="bg-gray-50 border rounded-2xl p-5 mb-5">
-              <p className="font-medium text-lg mb-2">
-                Current Question:
-              </p>
-              <p className="text-gray-700">
-                {currentQuestion}
-              </p>
-            </div>
-
-            {/* Answer Box */}
-            <textarea
-              rows={7}
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Type your answer here..."
-              className="w-full border border-gray-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-black resize-none"
+          <div className="h-[400px] rounded-3xl overflow-hidden bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
             />
+          </div>
 
-            {/* Submit */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <button
-              onClick={handleSubmit}
-              className="w-full mt-5 bg-black text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2 hover:scale-[1.01] hover:shadow-xl transition"
+              onClick={() => setCameraOn(!cameraOn)}
+              className="bg-gray-800 py-3 rounded-2xl"
             >
-              Submit Answer
-              <Send size={18} />
+              <div className="flex items-center justify-center gap-2">
+                {cameraOn ? <Video /> : <VideoOff />}
+                {cameraOn ? "Camera ON" : "Camera OFF"}
+              </div>
+            </button>
+
+            <button
+              onClick={() => setMicOn(!micOn)}
+              className="bg-gray-800 py-3 rounded-2xl"
+            >
+              <div className="flex items-center justify-center gap-2">
+                {micOn ? <Mic /> : <MicOff />}
+                {micOn ? "Mic ON" : "Mic OFF"}
+              </div>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            <button
+              onClick={handleStart}
+              className="bg-green-600 py-3 rounded-2xl hover:bg-green-700"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Play size={18} />
+                Start
+              </div>
+            </button>
+
+            <button
+              onClick={handlePause}
+              className="bg-yellow-500 py-3 rounded-2xl hover:bg-yellow-600"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Pause size={18} />
+                Pause
+              </div>
+            </button>
+
+            <button
+              onClick={handleSkip}
+              className="bg-gray-800 py-3 rounded-2xl hover:bg-gray-700"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <SkipForward size={18} />
+                Skip
+              </div>
             </button>
           </div>
         </div>
+
+        {/* RIGHT PANEL */}
+        <div className="bg-white/5 rounded-3xl p-6">
+          <h2 className="text-2xl font-bold mb-6">
+            Live AI Analysis
+          </h2>
+
+          <div className="space-y-4">
+            <div className="bg-white/5 p-4 rounded-2xl">
+              Confidence Score: Live Tracking...
+            </div>
+
+            <div className="bg-white/5 p-4 rounded-2xl">
+              Grammar Score: AI Evaluating...
+            </div>
+
+            <div className="bg-white/5 p-4 rounded-2xl">
+              Filler Words: Detecting...
+            </div>
+
+            <div className="bg-white/5 p-4 rounded-2xl">
+              Tone Analysis: Listening...
+            </div>
+
+            <div className="bg-white/5 p-4 rounded-2xl">
+              Speaking Speed: Monitoring...
+            </div>
+          </div>
+
+          <button className="w-full mt-6 bg-gradient-to-r from-violet-600 to-pink-500 py-4 rounded-2xl hover:opacity-90">
+            End Interview
+          </button>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,203 +1,236 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Mic,
-  FileText,
-  BarChart3,
+  Briefcase,
+  Code,
   Sparkles,
-  ArrowRight,
   User,
-  LogOut,
+  ArrowRight,
+  Brain,
+  Mic,
+  Video,
 } from "lucide-react";
 
-export default function Dashboard() {
-  const [userName, setUserName] = useState("User");
-  const [interviews, setInterviews] = useState(0);
-  const [score, setScore] = useState(0);
-  const [reports, setReports] = useState(0);
+export default function DashboardPage() {
+  const router = useRouter();
 
-  useEffect(() => {
-    // Get user data from localStorage
-    const storedUser = localStorage.getItem("user");
+  const [role, setRole] = useState("");
+  const [experience, setExperience] = useState("");
+  const [language, setLanguage] = useState("");
 
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-
-        setUserName(
-          parsedUser.fullName ||
-            parsedUser.email?.split("@")[0] ||
-            "User"
-        );
-      } catch {
-        setUserName(storedUser);
-      }
+  const handleStart = () => {
+    if (!role || !experience || !language) {
+      alert("Please fill all fields before starting interview 🚀");
+      return;
     }
 
-    // Dynamic live stats (initially empty)
-    const interviewCount =
-      Number(localStorage.getItem("interviews")) || 0;
+    // Save selected preferences (optional for next page use)
+    localStorage.setItem(
+      "interviewData",
+      JSON.stringify({
+        role,
+        experience,
+        language,
+      })
+    );
 
-    const avgScore =
-      Number(localStorage.getItem("avgScore")) || 0;
+    console.log({
+      role,
+      experience,
+      language,
+    });
 
-    const reportCount =
-      Number(localStorage.getItem("reports")) || 0;
-
-    setInterviews(interviewCount);
-    setScore(avgScore);
-    setReports(reportCount);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+    // Redirect to interview page
+    router.push("/interview");
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 px-6 py-10 relative overflow-hidden">
-      {/* Background Blur Effects */}
-      <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-200/30 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-pink-50 to-cyan-100 p-6">
+      {/* Top Navbar */}
+      <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">
+            AI Mock Interview
+          </h1>
+          <p className="text-gray-600">
+            Practice smarter. Crack interviews faster 🚀
+          </p>
+        </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Top Header */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-10">
-          <div>
-            <p className="inline-flex items-center gap-2 bg-white border border-gray-200 shadow-sm px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <Sparkles size={16} />
-              AI Mock Interview Dashboard
-            </p>
+        <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+          <User className="text-indigo-600" size={20} />
+          <span className="font-medium text-gray-700">
+            Welcome Back!
+          </span>
+        </div>
+      </div>
 
-            <h1 className="text-5xl font-bold mb-3">
-              Welcome Back, {userName} 👋
-            </h1>
+      {/* Stats Cards */}
+      <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-white rounded-3xl p-6 shadow-lg hover:scale-105 transition">
+          <div className="flex items-center gap-3 mb-3">
+            <Brain className="text-purple-600" />
+            <h2 className="font-semibold text-lg">
+              Total Interviews
+            </h2>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-800">0</h1>
+          <p className="text-gray-500 mt-2">
+            Start your first mock today
+          </p>
+        </div>
 
-            <p className="text-gray-600 text-lg max-w-2xl">
-              Start your interview journey, improve your confidence,
-              and track your progress with real-time AI feedback.
-            </p>
+        <div className="bg-white rounded-3xl p-6 shadow-lg hover:scale-105 transition">
+          <div className="flex items-center gap-3 mb-3">
+            <Mic className="text-pink-600" />
+            <h2 className="font-semibold text-lg">
+              Speaking Score
+            </h2>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-800">0%</h1>
+          <p className="text-gray-500 mt-2">
+            AI will track your improvement
+          </p>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 shadow-lg hover:scale-105 transition">
+          <div className="flex items-center gap-3 mb-3">
+            <Video className="text-cyan-600" />
+            <h2 className="font-semibold text-lg">
+              Confidence Level
+            </h2>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-800">0%</h1>
+          <p className="text-gray-500 mt-2">
+            Grow with every interview
+          </p>
+        </div>
+      </div>
+
+      {/* Main Section */}
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8">
+        {/* Left Form */}
+        <div className="bg-white rounded-3xl p-8 shadow-xl">
+          <div className="flex items-center gap-2 mb-6">
+            <Sparkles className="text-yellow-500" />
+            <h2 className="text-2xl font-bold text-gray-800">
+              Create New Interview
+            </h2>
           </div>
 
-          {/* Profile + Logout */}
-          <div className="flex gap-4 mt-6 md:mt-0">
-            <div className="bg-white border border-gray-200 shadow-sm px-5 py-3 rounded-2xl flex items-center gap-3">
-              <User size={20} />
-              <span className="font-medium">{userName}</span>
+          <div className="space-y-5">
+            {/* Role */}
+            <div>
+              <label className="font-medium text-gray-700">
+                Select Job Role
+              </label>
+              <div className="flex items-center border rounded-2xl px-4 py-3 mt-2">
+                <Briefcase className="text-indigo-500 mr-3" />
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full outline-none bg-transparent"
+                >
+                  <option value="">Choose your role</option>
+                  <option>Frontend Developer</option>
+                  <option>Backend Developer</option>
+                  <option>Full Stack Developer</option>
+                  <option>Software Engineer</option>
+                  <option>Data Analyst</option>
+                  <option>Machine Learning Engineer</option>
+                </select>
+              </div>
             </div>
 
+            {/* Experience */}
+            <div>
+              <label className="font-medium text-gray-700">
+                Years of Experience
+              </label>
+              <div className="flex items-center border rounded-2xl px-4 py-3 mt-2">
+                <User className="text-pink-500 mr-3" />
+                <select
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  className="w-full outline-none bg-transparent"
+                >
+                  <option value="">Select experience</option>
+                  <option>Fresher</option>
+                  <option>0-1 Years</option>
+                  <option>1-3 Years</option>
+                  <option>3-5 Years</option>
+                  <option>5+ Years</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Language */}
+            <div>
+              <label className="font-medium text-gray-700">
+                Preferred Language
+              </label>
+              <div className="flex items-center border rounded-2xl px-4 py-3 mt-2">
+                <Code className="text-cyan-500 mr-3" />
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full outline-none bg-transparent"
+                >
+                  <option value="">Choose language</option>
+                  <option>JavaScript</option>
+                  <option>Python</option>
+                  <option>Java</option>
+                  <option>C++</option>
+                  <option>TypeScript</option>
+                  <option>SQL</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Button */}
             <button
-              onClick={handleLogout}
-              className="bg-black text-white px-5 py-3 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition"
+              onClick={handleStart}
+              className="w-full bg-gradient-to-r from-indigo-600 to-pink-500 text-white py-4 rounded-2xl font-semibold text-lg hover:scale-[1.02] transition flex items-center justify-center gap-2"
             >
-              <LogOut size={18} />
-              Logout
+              Start AI Interview
+              <ArrowRight size={20} />
             </button>
           </div>
         </div>
 
-        {/* Live Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-3xl shadow-md border border-gray-100 hover:shadow-xl transition duration-300">
-            <div className="flex items-center gap-4">
-              <div className="bg-gray-100 p-4 rounded-2xl">
-                <Mic size={24} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {interviews} Interviews
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Completed sessions
-                </p>
-              </div>
+        {/* Right Side */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl">
+          <h2 className="text-3xl font-bold mb-4">
+            Your Personal AI Interview Coach 🤖
+          </h2>
+
+          <p className="text-lg text-indigo-100 mb-8">
+            Get role-based real interview questions, live feedback,
+            speaking analysis, confidence score, and personalized
+            improvement tips.
+          </p>
+
+          <div className="space-y-4">
+            <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-md">
+              🎯 Real-world technical + HR questions
+            </div>
+
+            <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-md">
+              🎤 Voice + communication feedback
+            </div>
+
+            <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-md">
+              📈 Performance tracking dashboard
+            </div>
+
+            <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-md">
+              🚀 Personalized improvement roadmap
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-md border border-gray-100 hover:shadow-xl transition duration-300">
-            <div className="flex items-center gap-4">
-              <div className="bg-gray-100 p-4 rounded-2xl">
-                <BarChart3 size={24} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {score}% Score
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Average performance
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-md border border-gray-100 hover:shadow-xl transition duration-300">
-            <div className="flex items-center gap-4">
-              <div className="bg-gray-100 p-4 rounded-2xl">
-                <FileText size={24} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {reports} Reports
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Feedback generated
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Action Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Start Interview */}
-          <Link
-            href="/interview"
-            className="group bg-white p-8 rounded-3xl border border-gray-100 shadow-md hover:shadow-2xl hover:-translate-y-1 transition duration-300"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="bg-black text-white p-4 rounded-2xl">
-                <Mic size={28} />
-              </div>
-
-              <ArrowRight className="group-hover:translate-x-1 transition duration-300" />
-            </div>
-
-            <h2 className="text-2xl font-bold mb-3">
-              Start Mock Interview
-            </h2>
-
-            <p className="text-gray-600 leading-relaxed">
-              Practice HR, Technical, and Behavioral interviews with
-              real-time AI feedback and scoring.
-            </p>
-          </Link>
-
-          {/* Final Report */}
-          <Link
-            href="/feedback"
-            className="group bg-white p-8 rounded-3xl border border-gray-100 shadow-md hover:shadow-2xl hover:-translate-y-1 transition duration-300"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="bg-black text-white p-4 rounded-2xl">
-                <FileText size={28} />
-              </div>
-
-              <ArrowRight className="group-hover:translate-x-1 transition duration-300" />
-            </div>
-
-            <h2 className="text-2xl font-bold mb-3">
-              View Final Report
-            </h2>
-
-            <p className="text-gray-600 leading-relaxed">
-              Check interview history, strengths, weak areas, and
-              personalized AI improvement suggestions.
-            </p>
-          </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
