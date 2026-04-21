@@ -4,29 +4,44 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    const { role, experience, techstack } = body;
+    const { question, answer, role } = body;
 
     const prompt = `
-Generate 10 deep, realistic interview questions.
+You are a senior technical interviewer.
 
-Candidate Role: ${role}
-Experience Level: ${experience}
-Tech Stack: ${techstack}
+Analyze this interview answer professionally.
 
-Rules:
-- Questions must be practical and real-world
-- Include debugging questions
-- Include scenario-based questions
-- Include problem-solving questions
-- Avoid very basic textbook questions
-- Questions should feel like real company interviews
+Question:
+${question}
+
+Candidate Role:
+${role}
+
+Candidate Answer:
+${answer}
+
+Evaluate based on:
+
+1. Technical correctness
+2. Communication clarity
+3. Confidence level
+4. Real-world understanding
+5. Problem-solving ability
 
 Return ONLY valid JSON in this format:
 
 {
-  "questions": [
-    "Question 1",
-    "Question 2"
+  "score": 8,
+  "strengths": [
+    "Strong understanding of React lifecycle"
+  ],
+  "weaknesses": [
+    "Could explain optimization strategies better"
+  ],
+  "betterAnswer": "A stronger answer would be...",
+  "improvementTips": [
+    "Add real project examples",
+    "Use structured explanation"
   ]
 }
 `;
@@ -57,7 +72,6 @@ Return ONLY valid JSON in this format:
     const text =
       result.candidates[0].content.parts[0].text;
 
-    // Remove markdown if Gemini returns ```json
     const cleanedText = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -66,17 +80,25 @@ Return ONLY valid JSON in this format:
     const parsed = JSON.parse(cleanedText);
 
     return NextResponse.json(parsed);
+
   } catch (error) {
     console.error(error);
 
     return NextResponse.json({
-      questions: [
-        "Tell me about yourself.",
-        "Explain your biggest project.",
-        "What is React reconciliation?",
-        "Difference between SQL and NoSQL?",
-        "How do you optimize frontend performance?"
+      score: 7,
+      strengths: [
+        "Good basic explanation"
       ],
+      weaknesses: [
+        "Needs deeper technical details"
+      ],
+      betterAnswer:
+        "Try explaining with a real-world example and structured steps.",
+      improvementTips: [
+        "Speak with confidence",
+        "Use practical examples",
+        "Avoid short generic answers"
+      ]
     });
   }
 }
